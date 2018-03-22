@@ -15,7 +15,7 @@ The goals / steps of this project are the following:
 
 ~~And, for the updated and not valid things, I have make them striked-through with this syntax~~
 
-I hope you have better convenience in reviewing my project. 
+*I hope you have better convenience in reviewing my project.*
 
 ### Implementation
 My implementation is in 'vehicle_detection.ipynb'.
@@ -194,7 +194,11 @@ Then, normalized trainset with StandardScaler(), and applied the normalizer to b
     X_test = X_scaler.transform(X_test)
 
 
-With normalized trainset and testset, I have fit the linear SVM model, and get the accuracy, '97.66'.
+~~With normalized trainset and testset, I have fit the linear SVM model, and get the accuracy, '97.66'.~~
+> I have tried to apply Grid Search algorithm to my classifier, and it has improved the accuracy great. To compare the accuracy from the Linear SVM, I first fit the linear SVM, and then applied grid-search to svm for my classifier.  
+> With the grid searching, I have achived 0.9932 of accuracy, which is very comparable to the 0.9797 with the linear SVM.
+
+Linear SVM
 
     #####
     # Use a linear SVC 
@@ -202,10 +206,29 @@ With normalized trainset and testset, I have fit the linear SVM model, and get t
     svc = LinearSVC()
     # Check the training time for the SVC
     svc.fit(X_train, y_train)
+    # Check the score of the SVC
+    print('Test Accuracy of Linear SVM = ', round(svc.score(X_test, y_test), 4))
+
+Grid Search SVM
+
+    from sklearn.svm import SVC
+    svc = SVC()
+    parameters = {'kernel':('linear', 'rbf'), 'C':[1, 10]}
+    from sklearn.model_selection import GridSearchCV
+    clf = GridSearchCV(svc, parameters)
+    # Check the training time for the SVC
+    clf.fit(X_train, y_train)
+    # Check the score of the SVC
+    print('Test Accuracy of GridSearch SVM = ', round(clf.score(X_test, y_test), 4))
+
+Results
 
     Train set size : 14208
     Test set size : 3552
-    Test Accuracy of SVC =  0.9806
+    Test Accuracy of Linear SVM =  0.9797
+    Test Accuracy of GridSearch SVM =  0.9932
+
+
 
 
 One thing strange results are that getting higher accuracy does not guarantee good performance in small sizes. I think that random cropping and resizing to the trainset may help to achieve better robustness in sizes. 
@@ -223,25 +246,38 @@ I decided to search window positions lineary, with various sizes of boxes, in th
 ![slide window](./writeup_images/slide_window.png)
 
 
+> I have applied combination of windows of 5 window sizes, like the below:
+> With the size (32,32), it has given too much false positives, so that I have excluded in my final test.
+
+    windows = slide_window(img)
+    windows2 = slide_window(img, xy_window=(96,96))
+    windows3 = slide_window(img, xy_window=(48,48))
+    #windows4 = slide_window(img, xy_window=(32,32))
+    windows5 = slide_window(img, xy_window=(128,128))
+    windows6 = slide_window(img, xy_window=(160,160))
+    windows=windows+windows2+windows3+windows5+windows6
+
+
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
 Ultimately I searched on three scales using RGB 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided good results.  However it was very sensitive to the threshold of heatmap count. I have visualized the results with heatmap threashold '1' :
 
 
-![image test](./writeup_images/image_test_0.png)
+![image test](./writeup_images/image_test_0_1.png)
 
 
 
 
-In the below image, there were too many false positives.
+~~In the below image, there were too many false positives.~~
+> With the improved classifier and different windowing, I have removed almost of false positives from the before. 
 
-![image test](./writeup_images/image_test_1.png)
+![image test](./writeup_images/image_test_1_1.png)
 
 
 In the below, too small size of detection found. 
 
-![image test](./writeup_images/image_test_2.png)
+![image test](./writeup_images/image_test_2_1.png)
 
 
 To recover the variance from threshold, I have decided to apply a method of tracking by multiple images, where I have stacked results from a few sequential images, then sets threshold bigger. This helped to reduce false positives.
@@ -259,29 +295,34 @@ Here's a [link to my video result](./output_images/output_video.mp4)
 
 To recover the variance from threshold, I have applied a method of tracking by multiple images, where I have stacked results from a few sequential images, then sets threshold bigger. This helped to reduce false positives.
 
-First of all, I have stacked the results to the variable 'saved_box' frame by frame with some limits of number of frames:
+~~First of all, I have stacked the results to the variable 'saved_box' frame by frame with some limits of number of frames:
+Then, I collect all the boxes of 'saved_box', to 'box_list':~~
 
-    if frame_count>stack_threshold:
-        saved_box_list.pop(0)
+> I have applied 'collections.deque' method as the reviewers' recommandation. My code was very simplified to implement multiple-frame-thresholdings. Please see the follow code block as my new implementation:
+
+    from collections import deque
+    q = deque(maxlen = 3)
+    global windows
+    detect_windows = search_windows(image, windows, clf, X_scaler)
     if(len(detect_windows)==0):
         detect_windows=np.zeros([1,2,2])
-    saved_box_list.append(detect_windows)
-
-Then, I collect all the boxes of 'saved_box', to 'box_list':
-
+    q.append(detect_windows)
     box_list=np.empty([0,2,2])
+    saved_box_list=list(q)
     for box in saved_box_list:
         box_list = np.vstack((box_list, box))
-    
+ 
+
  
 Finally I have applied big threashold to my heatmap. :
 
     # Apply threshold to help remove false positives
-    heat = apply_threshold(heat,10)
+    heat = apply_threshold(heat,3)
 
 
-I have stacked boxes from '5' frames, and thresholded with '10'. I still need to tune more for the number of frames and threshold value.
+I have stacked boxes from '3' frames, and thresholded with '3'. I still need to tune more for the number of frames and threshold value.
 
+> I have used fewer frames to my frame hitory because of better accuracy of classifer. With big number of history frames, it has trade-off to the time of first detection after the appearance of the vehicles.
 
 
 ---
