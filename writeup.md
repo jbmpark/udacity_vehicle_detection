@@ -10,7 +10,12 @@ The goals / steps of this project are the following:
 * Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
 
+## I described my improvements from the first submission with 'quotation' like below:
+> My improvements, compared to the first submission, are exalpained with this syntax. And, also updated code blocks and images.
 
+~~And, for the updated and not valid things, I have make them striked-through with this syntax~~
+
+I hope you have better convenience in reviewing my project. 
 
 ### Implementation
 My implementation is in 'vehicle_detection.ipynb'.
@@ -75,7 +80,8 @@ Then, I Have tested various values for parameters of 'orientation, pixels_per_ce
     pix_per_cell = 8
     cell_per_block = 2
 
-And, for the color space, I have found that 'RGB' showed best accuracy of SVM, so that I've always applied 'RGB' to extracting HOG features.
+~~And, for the color space, I have found that 'RGB' showed best accuracy of SVM, so that I've always applied 'RGB' to extracting HOG features.~~
+> I have applied the same color space as other features. In results, I used 'YUV' for HOG, Spatial bins and Color Histogram.
 
 Here is my visualization of HOG features:
 
@@ -107,6 +113,8 @@ I trained a linear SVM using features from HOG, Spatial bins and Color Histogram
 
 In the section '1.5. Combined and Extract Features' of my implementation, I have extracted features each for HOG, Spatial bins and Color Histogram including changing color space, and concatenateded them to one linear feature shape. 
 
+> I have changed the color space from 'LUV' to 'YUV', and achived better performance.
+
 
     def extract_features(rgb_img, hog=True, spatial_bin=True, histogram=True, \
                         color_space='RGB', \
@@ -126,8 +134,8 @@ In the section '1.5. Combined and Extract Features' of my implementation, I have
             elif color_space == 'YCrCb':
                 f_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2YCrCb)
         else: f_img = np.copy(rgb_img)      
-            
-        # HOG Features , always done in RGB space
+    
+        
         if hog==True:
             hog_features =  get_hog_features(f_img, orient, pix_per_cell, cell_per_block, 
                                              vis=False, feature_vec=True)
@@ -149,7 +157,7 @@ Then, proceded extracting features and saved to use as train dataset.
     use_hog=True
     use_spatial_bin=True
     use_histogram=True
-    color_space='LUV'
+    color_space='YUV'
     orient = 11
     pix_per_cell = 8
     cell_per_block = 2
